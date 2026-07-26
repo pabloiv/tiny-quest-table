@@ -1,25 +1,25 @@
 :root {
   color-scheme: light;
-  --ink: #17231f;
-  --deep: #27352f;
-  --muted: #66726d;
-  --paper: #f4f7ef;
+  --ink: #18211e;
+  --deep: #26342f;
+  --muted: #68736f;
+  --paper: #f3f1e8;
   --panel: #fffdf7;
-  --panel-2: #fef4e8;
-  --line: #24372f;
-  --soft-line: #d5ded5;
-  --teal: #12928b;
-  --teal-dark: #086965;
-  --coral: #ef6b4f;
-  --gold: #f4b640;
-  --violet: #6556d9;
-  --leaf: #558c4f;
-  --sky: #2f7ebf;
-  --rose: #f4d7cf;
-  --shadow: 0 14px 0 rgba(23, 35, 31, 0.08), 0 22px 46px rgba(23, 35, 31, 0.16);
-  --hard-shadow: 0 5px 0 #17231f;
+  --panel-2: #f7efe1;
+  --line: #26342f;
+  --soft-line: #d8d4c7;
+  --teal: #157f78;
+  --teal-dark: #0d5d59;
+  --coral: #c95f49;
+  --gold: #dca33a;
+  --violet: #5d5aa8;
+  --leaf: #567c52;
+  --sky: #386f96;
+  --rose: #ead5cd;
+  --shadow: 0 12px 28px rgba(24, 33, 30, 0.14);
+  --hard-shadow: 0 3px 0 #18211e;
   --font-body: "Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: "Fredoka", var(--font-body);
+  --font-display: "Fraunces", Georgia, serif;
   font-family: var(--font-body);
 }
 
@@ -31,10 +31,10 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    linear-gradient(135deg, rgba(18, 146, 139, 0.14) 0 18%, transparent 18% 100%),
-    linear-gradient(315deg, rgba(239, 107, 79, 0.13) 0 14%, transparent 14% 100%),
-    repeating-linear-gradient(0deg, rgba(23, 35, 31, 0.035) 0 1px, transparent 1px 28px),
-    repeating-linear-gradient(90deg, rgba(23, 35, 31, 0.03) 0 1px, transparent 1px 28px),
+    linear-gradient(135deg, rgba(21, 127, 120, 0.09) 0 18%, transparent 18% 100%),
+    linear-gradient(315deg, rgba(201, 95, 73, 0.08) 0 14%, transparent 14% 100%),
+    repeating-linear-gradient(0deg, rgba(24, 33, 30, 0.028) 0 1px, transparent 1px 30px),
+    repeating-linear-gradient(90deg, rgba(24, 33, 30, 0.024) 0 1px, transparent 1px 30px),
     var(--paper);
   color: var(--ink);
 }
@@ -95,8 +95,8 @@ button:disabled {
 .brand h2 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 1.45rem;
-  font-weight: 700;
+  font-size: 1.36rem;
+  font-weight: 750;
   line-height: 1.1;
 }
 
@@ -160,12 +160,12 @@ button:disabled {
 .title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(2.4rem, 13vw, 4rem);
-  font-weight: 700;
+  font-size: clamp(2.25rem, 11.6vw, 3.75rem);
+  font-weight: 750;
   line-height: 0.95;
   letter-spacing: 0;
   text-wrap: balance;
-  text-shadow: 0 3px 0 rgba(244, 182, 64, 0.45);
+  text-shadow: 0 2px 0 rgba(220, 163, 58, 0.28);
 }
 
 .subtitle {
@@ -178,7 +178,7 @@ button:disabled {
 h2 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 1.55rem;
+  font-size: 1.42rem;
   line-height: 1.1;
 }
 
@@ -197,11 +197,11 @@ h2 {
   border: 2px solid var(--line);
   border-radius: 8px;
   padding: 12px 16px;
-  background: linear-gradient(180deg, #31443c, var(--ink));
+  background: linear-gradient(180deg, #34453f, var(--deep));
   color: #fff;
   box-shadow: var(--hard-shadow);
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 750;
   letter-spacing: 0;
   transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
 }
@@ -219,11 +219,11 @@ h2 {
 }
 
 .button[data-action="start"]::before {
-  content: "✦";
+  content: "◆";
 }
 
 .button.secondary::before {
-  content: "↗";
+  content: "→";
 }
 
 .button.secondary {
@@ -242,10 +242,10 @@ h2 {
   height: 48px;
   border-radius: 8px;
   border: 2px solid var(--line);
-  background: var(--gold);
+  background: #e6b34c;
   color: var(--ink);
-  box-shadow: 0 4px 0 #17231f;
-  font-family: var(--font-display);
+  box-shadow: 0 3px 0 #18211e;
+  font-family: var(--font-body);
   font-weight: 900;
 }
 
@@ -286,7 +286,7 @@ h2 {
 
 .field label {
   font-size: 0.9rem;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-weight: 700;
 }
 
@@ -347,12 +347,12 @@ h2 {
   color: var(--ink);
   font-size: 1.2rem;
   font-weight: 900;
-  box-shadow: 0 3px 0 #17231f;
+  box-shadow: 0 2px 0 #18211e;
 }
 
 .stepper output {
   text-align: center;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-weight: 900;
 }
 
@@ -368,7 +368,7 @@ h2 {
   border-radius: 8px;
   background: #fffefb;
   border: 2px solid var(--line);
-  box-shadow: 0 3px 0 rgba(23, 35, 31, 0.16);
+  box-shadow: 0 2px 0 rgba(24, 33, 30, 0.18);
   font-weight: 900;
 }
 
@@ -381,7 +381,7 @@ h2 {
   min-height: 44px;
   border-radius: 8px;
   border: 2px solid var(--line);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.45), 0 3px 0 rgba(23, 35, 31, 0.22);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.38), 0 2px 0 rgba(24, 33, 30, 0.2);
 }
 
 .swatch.active {
@@ -413,7 +413,7 @@ h2 {
   border-radius: 8px;
   background: transparent;
   color: var(--muted);
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-weight: 700;
 }
 
@@ -439,7 +439,7 @@ h2 {
   font-size: 1.35rem;
   font-weight: 900;
   border: 2px solid var(--line);
-  box-shadow: 0 4px 0 #17231f;
+  box-shadow: 0 3px 0 #18211e;
 }
 
 .hearts {
@@ -455,7 +455,7 @@ h2 {
   border: 2px solid var(--line);
   background: var(--rose);
   color: #b6402b;
-  box-shadow: 0 3px 0 #17231f;
+  box-shadow: 0 2px 0 #18211e;
   font-weight: 900;
 }
 
@@ -479,7 +479,7 @@ h2 {
   text-align: left;
   display: grid;
   align-content: space-between;
-  box-shadow: 0 5px 0 #17231f;
+  box-shadow: 0 3px 0 #18211e;
   overflow: hidden;
   position: relative;
   font-weight: 900;
@@ -490,9 +490,9 @@ h2 {
   right: 10px;
   bottom: 6px;
   font-family: var(--font-display);
-  font-size: 2.9rem;
+  font-size: 2.4rem;
   line-height: 1;
-  opacity: 0.18;
+  opacity: 0.13;
 }
 
 .roll-button span {
@@ -501,36 +501,36 @@ h2 {
 }
 
 .strong {
-  background: linear-gradient(145deg, #f07756, #bd3f31);
+  background: linear-gradient(145deg, #d86d55, #9f493b);
 }
 
 .strong::after {
-  content: "!";
+  content: "I";
 }
 
 .quick {
-  background: linear-gradient(145deg, #19a99e, #076c66);
+  background: linear-gradient(145deg, #178c84, #0d5d59);
 }
 
 .quick::after {
-  content: "↯";
+  content: "II";
 }
 
 .clever {
-  background: linear-gradient(145deg, #7462ee, #4533a7);
+  background: linear-gradient(145deg, #6b68ba, #44437e);
 }
 
 .clever::after {
-  content: "?";
+  content: "III";
 }
 
 .cool {
-  background: linear-gradient(145deg, #f7c35a, #d88e1c);
+  background: linear-gradient(145deg, #e8b34d, #bd7d24);
   color: #31220b;
 }
 
 .cool::after {
-  content: "★";
+  content: "IV";
 }
 
 .list {
@@ -554,7 +554,7 @@ h2 {
 
 .log-item strong {
   text-transform: capitalize;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
 }
 
 .compact-grid {
@@ -569,7 +569,7 @@ h2 {
   border: 2px solid var(--line);
   background: #e8f0e7;
   box-shadow: 0 3px 0 #17231f;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-weight: 900;
 }
 
