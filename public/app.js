@@ -132,7 +132,7 @@ async function startRoom() {
 
 async function loadRoom(roomId) {
   try {
-    const data = await api(`/api/rooms/${roomId}`);
+    const data = await api(`/api/rooms?id=${encodeURIComponent(roomId)}`);
     setRoom(data.room);
     startPolling();
   } catch (error) {
@@ -144,9 +144,9 @@ async function loadRoom(roomId) {
 function startPolling() {
   if (state.poll) clearInterval(state.poll);
   state.poll = setInterval(async () => {
-    if (!state.room?.id) return;
+      if (!state.room?.id) return;
     try {
-      const data = await api(`/api/rooms/${state.room.id}`);
+      const data = await api(`/api/rooms?id=${encodeURIComponent(state.room.id)}`);
       if (data.room.updatedAt !== state.room.updatedAt) {
         state.room = data.room;
         renderTable();
@@ -225,7 +225,7 @@ function renderTable() {
 
 function renderQr() {
   const playerUrl = `${location.origin}/r/${state.room.id}`;
-  const qr = `/api/rooms/${state.room.id}/qr.svg`;
+  const qr = `/api/rooms?id=${encodeURIComponent(state.room.id)}&action=qr.svg`;
   return h`
     <section class="panel qr-wrap">
       <img alt="QR code for room ${escapeHtml(state.room.id)}" src="${qr}" />
@@ -388,7 +388,7 @@ function wireCurrentTab(character, isGuide) {
     try {
       const data = await api(`/api/rooms/${state.room.id}/character`, {
         method: "POST",
-        body: JSON.stringify({ clientId: state.clientId, character: state.draft })
+        body: JSON.stringify({ roomId: state.room.id, action: "character", clientId: state.clientId, character: state.draft })
       });
       state.tab = "play";
       setRoom(data.room);
@@ -436,7 +436,7 @@ function wireCurrentTab(character, isGuide) {
       try {
         const data = await api(`/api/rooms/${state.room.id}/roll`, {
           method: "POST",
-          body: JSON.stringify({ clientId: state.clientId, stat: button.dataset.roll })
+          body: JSON.stringify({ roomId: state.room.id, action: "roll", clientId: state.clientId, stat: button.dataset.roll })
         });
         setRoom(data.room);
       } catch (error) {
@@ -453,7 +453,7 @@ function wireCurrentTab(character, isGuide) {
       try {
         const data = await api(`/api/rooms/${state.room.id}/heart`, {
           method: "POST",
-          body: JSON.stringify({ clientId: state.clientId, hearts })
+          body: JSON.stringify({ roomId: state.room.id, action: "heart", clientId: state.clientId, hearts })
         });
         setRoom(data.room);
       } catch (error) {
@@ -468,6 +468,8 @@ function wireCurrentTab(character, isGuide) {
       const data = await api(`/api/rooms/${state.room.id}/guide`, {
         method: "POST",
         body: JSON.stringify({
+          roomId: state.room.id,
+          action: "guide",
           guideToken: state.guideToken,
           scene: document.querySelector("#scene").value,
           note: document.querySelector("#guide-note").value
@@ -485,6 +487,8 @@ function wireCurrentTab(character, isGuide) {
         const data = await api(`/api/rooms/${state.room.id}/guide`, {
           method: "POST",
           body: JSON.stringify({
+            roomId: state.room.id,
+            action: "guide",
             guideToken: state.guideToken,
             difficulty: Number(button.dataset.difficulty),
             scene: document.querySelector("#scene")?.value,

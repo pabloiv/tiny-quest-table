@@ -110,16 +110,20 @@ export default async function handler(req, res) {
   if (parts[0] !== "rooms") return send(res, 404, { error: "Not found" });
 
   if (req.method === "POST" && parts.length === 1) {
-    const room = createRoom();
-    return send(res, 201, { room: publicRoom(room), guideToken: room.guideToken });
+    const input = req.body || {};
+    if (!input.roomId && !input.action) {
+      const room = createRoom();
+      return send(res, 201, { room: publicRoom(room), guideToken: room.guideToken });
+    }
   }
 
-  const roomId = parts[1]?.toUpperCase();
-  const action = parts[2];
+  const input = req.body || {};
+  const roomId = (parts[1] || url.searchParams.get("id") || input.roomId)?.toUpperCase();
+  const action = parts[2] || url.searchParams.get("action") || input.action;
   const room = roomId ? getRoom(roomId) : undefined;
   if (!room) return send(res, 404, { error: "Room not found" });
 
-  if (req.method === "GET" && parts.length === 2) {
+  if (req.method === "GET" && !action) {
     return send(res, 200, { room: publicRoom(room) });
   }
 
@@ -137,7 +141,6 @@ export default async function handler(req, res) {
     return res.status(200).send(svg);
   }
 
-  const input = req.body || {};
   const clientId = cleanText(input.clientId, makeId(8), 80);
 
   if (req.method === "POST" && action === "character") {

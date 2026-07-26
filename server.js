@@ -139,11 +139,23 @@ function addLog(room, entry) {
 
 async function handleApi(req, res, url) {
   if (req.method === "POST" && url.pathname === "/api/rooms") {
-    const room = createRoom();
-    return sendJson(res, 201, {
-      room: publicRoom(room),
-      guideToken: room.guideToken
-    });
+    const input = await readJson(req);
+    if (!input.roomId && !input.action) {
+      const room = createRoom();
+      return sendJson(res, 201, {
+        room: publicRoom(room),
+        guideToken: room.guideToken
+      });
+    }
+    const room = getRoom(cleanText(input.roomId, "", 20).toUpperCase());
+    if (!room) return sendJson(res, 404, { error: "Room not found" });
+    return handleRoomAction(req, res, url, room, input.action, input);
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/rooms") {
+    const room = getRoom(cleanText(url.searchParams.get("id"), "", 20).toUpperCase());
+    if (!room) return sendJson(res, 404, { error: "Room not found" });
+    return handleRoomAction(req, res, url, room, url.searchParams.get("action"), {});
   }
 
   const match = url.pathname.match(/^\/api\/rooms\/([^/]+)(?:\/([^/]+))?$/);
@@ -153,6 +165,11 @@ async function handleApi(req, res, url) {
   const room = getRoom(roomId.toUpperCase());
   if (!room) return sendJson(res, 404, { error: "Room not found" });
 
+  const input = await readJson(req);
+  return handleRoomAction(req, res, url, room, action, input);
+}
+
+async function handleRoomAction(req, res, url, room, action, input) {
   if (req.method === "GET" && action === "qr.svg") {
     const joinUrl = `${url.protocol}//${req.headers.host}/r/${room.id}`;
     const svg = await QRCode.toString(joinUrl, {
@@ -175,7 +192,6 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, { room: publicRoom(room) });
   }
 
-  const input = await readJson(req);
   const clientId = cleanText(input.clientId, makeId(8), 80);
 
   if (req.method === "POST" && action === "character") {
