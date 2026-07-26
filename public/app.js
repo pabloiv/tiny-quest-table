@@ -85,6 +85,10 @@ function isGuideForRoom() {
   return Boolean(state.guideToken && sessionStorage.getItem(`tqtGuide:${state.room?.id}`) === state.guideToken);
 }
 
+function scrollToTop() {
+  requestAnimationFrame(() => window.scrollTo(0, 0));
+}
+
 function syncDraftFromForm() {
   const name = document.querySelector("#hero-name");
   const special = document.querySelector("#special");
@@ -208,7 +212,7 @@ function renderTable() {
     <nav class="tabs" aria-label="Table sections">
       <button class="${state.tab === "play" ? "active" : ""}" data-tab="play">Play</button>
       <button class="${state.tab === "make" ? "active" : ""}" data-tab="make">${character ? "Hero" : "Make"}</button>
-      <button class="${state.tab === "guide" || state.tab === "qr" ? "active" : ""}" data-tab="${isGuide ? "guide" : "qr"}">${isGuide ? "Guide" : "QR"}</button>
+      <button class="${state.tab === (isGuide ? "guide" : "qr") ? "active" : ""}" data-tab="${isGuide ? "guide" : "qr"}">${isGuide ? "Guide" : "QR"}</button>
     </nav>
   `;
 
@@ -218,6 +222,7 @@ function renderTable() {
       state.tab = button.dataset.tab;
       state.error = "";
       renderTable();
+      scrollToTop();
     });
   });
   wireCurrentTab(character, isGuide);
@@ -392,6 +397,7 @@ function wireCurrentTab(character, isGuide) {
       });
       state.tab = "play";
       setRoom(data.room);
+      scrollToTop();
     } catch (error) {
       setError(error);
     }

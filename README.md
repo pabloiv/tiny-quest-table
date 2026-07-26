@@ -12,6 +12,11 @@ Mobile-first, QR-first tabletop roleplaying helper for fast shared play.
 - Heart tracker
 - Guide controls for scene and difficulty
 
+## Design Resources
+
+- Fonts: Fredoka and Atkinson Hyperlegible from Google Fonts.
+- Visual direction: lightweight quest-map interface, tactile mobile controls, and game-icon silhouettes inspired by free tabletop/game UI resources.
+
 ## Run Locally
 
 ```sh
