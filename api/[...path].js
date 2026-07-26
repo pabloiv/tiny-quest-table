@@ -103,7 +103,10 @@ function send(res, status, payload) {
 export default async function handler(req, res) {
   cleanRooms();
 
-  const parts = Array.isArray(req.query.path) ? req.query.path : [];
+  const url = new URL(req.url || "/", `https://${req.headers.host || "localhost"}`);
+  const parts = Array.isArray(req.query.path)
+    ? req.query.path
+    : url.pathname.replace(/^\/api\/?/, "").split("/").filter(Boolean);
   if (parts[0] !== "rooms") return send(res, 404, { error: "Not found" });
 
   if (req.method === "POST" && parts.length === 1) {
