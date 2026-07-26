@@ -1,10 +1,19 @@
 import crypto from "node:crypto";
 import QRCode from "qrcode";
+import { createClient } from "@supabase/supabase-js";
 
 const rooms = globalThis.__tinyQuestRooms || new Map();
 globalThis.__tinyQuestRooms = rooms;
 
 const ttlMs = 1000 * 60 * 60 * 24;
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase =
+  supabaseUrl && supabaseServiceRoleKey
+    ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+        auth: { persistSession: false, autoRefreshToken: false }
+      })
+    : null;
 
 function makeId(bytes = 4) {
   return crypto.randomBytes(bytes).toString("base64url").toUpperCase();
@@ -27,7 +36,22 @@ function publicRoom(room) {
   };
 }
 
-function createRoom() {
+function toRow(room) {
+  return {
+    id: room.id,
+    guide_token: room.guideToken,
+    state: room,
+    created_at: new Date(room.createdAt).toISOString(),
+    updated_at: new Date(room.updatedAt).toISOString(),
+    expires_at: new Date((room.accessedAt || room.updatedAt) + ttlMs).toISOString()
+  };
+}
+
+function fromRow(row) {
+  return row?.state ? { ...row.state, guideToken: row.guide_token } : undefined;
+}
+
+async function createRoom() {
   const id = makeId(4);
   const room = {
     id,
@@ -41,18 +65,50 @@ function createRoom() {
     scene: "First Scene",
     difficulty: 4
   };
-  rooms.set(id, room);
+  if (supabase) {
+    const { error } = await supabase.from("rooms").insert(toRow(room));
+    if (error) throw error;
+  } else {
+    rooms.set(id, room);
+  }
   return room;
 }
 
-function getRoom(id) {
+async function getRoom(id) {
+  if (supabase) {
+    const { data, error } = await supabase.from("rooms").select("id, guide_token, state, expires_at").eq("id", id).maybeSingle();
+    if (error) throw error;
+    const expiresAt = data?.expires_at ? Date.parse(data.expires_at) : 0;
+    if (!data || expiresAt <= now()) return undefined;
+    const room = fromRow(data);
+    room.accessedAt = now();
+    await saveRoom(room, { touchOnly: true });
+    return room;
+  }
+
   const room = rooms.get(id);
   if (!room) return undefined;
   room.accessedAt = now();
   return room;
 }
 
-function cleanRooms() {
+async function saveRoom(room, options = {}) {
+  if (!options.touchOnly) room.updatedAt = now();
+  room.accessedAt = now();
+  if (supabase) {
+    const { error } = await supabase.from("rooms").upsert(toRow(room), { onConflict: "id" });
+    if (error) throw error;
+  } else {
+    rooms.set(room.id, room);
+  }
+}
+
+async function cleanRooms() {
+  if (supabase) {
+    await supabase.from("rooms").delete().lt("expires_at", new Date().toISOString());
+    return;
+  }
+
   const cutoff = now() - ttlMs;
   for (const [id, room] of rooms.entries()) {
     if (room.accessedAt < cutoff) rooms.delete(id);
@@ -101,7 +157,7 @@ function send(res, status, payload) {
 }
 
 export default async function handler(req, res) {
-  cleanRooms();
+  await cleanRooms();
 
   const url = new URL(req.url || "/", `https://${req.headers.host || "localhost"}`);
   const parts = Array.isArray(req.query.path)
@@ -112,7 +168,7 @@ export default async function handler(req, res) {
   if (req.method === "POST" && parts.length === 1) {
     const input = req.body || {};
     if (!input.roomId && !input.action) {
-      const room = createRoom();
+      const room = await createRoom();
       return send(res, 201, { room: publicRoom(room), guideToken: room.guideToken });
     }
   }
@@ -120,7 +176,7 @@ export default async function handler(req, res) {
   const input = req.body || {};
   const roomId = (parts[1] || url.searchParams.get("id") || input.roomId)?.toUpperCase();
   const action = parts[2] || url.searchParams.get("action") || input.action;
-  const room = roomId ? getRoom(roomId) : undefined;
+  const room = roomId ? await getRoom(roomId) : undefined;
   if (!room) return send(res, 404, { error: "Room not found" });
 
   if (req.method === "GET" && !action) {
@@ -149,6 +205,7 @@ export default async function handler(req, res) {
       const existed = Boolean(room.characters[character.id]);
       room.characters[character.id] = character;
       addLog(room, { type: "system", text: `${character.name} ${existed ? "updated" : "joined"} the table.` });
+      await saveRoom(room);
       return send(res, 200, { room: publicRoom(room), character });
     } catch (error) {
       return send(res, 400, { error: error.message });
@@ -173,6 +230,7 @@ export default async function handler(req, res) {
       outcome,
       text: `${character.name} rolled ${statKey}: ${die}+${character.stats[statKey]} = ${total} (${outcome}).`
     });
+    await saveRoom(room);
     return send(res, 200, { room: publicRoom(room) });
   }
 
@@ -187,6 +245,7 @@ export default async function handler(req, res) {
       characterName: character.name,
       text: `${character.name} now has ${character.hearts} heart${character.hearts === 1 ? "" : "s"}.`
     });
+    await saveRoom(room);
     return send(res, 200, { room: publicRoom(room) });
   }
 
@@ -201,6 +260,7 @@ export default async function handler(req, res) {
       addLog(room, { type: "system", text: `Difficulty set to ${room.difficulty}+.` });
     }
     if (input.note) addLog(room, { type: "note", text: cleanText(input.note, "Guide note", 120) });
+    await saveRoom(room);
     return send(res, 200, { room: publicRoom(room) });
   }
 

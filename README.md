@@ -33,8 +33,15 @@ http://192.168.1.12:8787
 
 ## Current Storage Model
 
-Rooms are kept in server memory and expire after roughly 24 hours of inactivity. This is good for quick local demos, but production should use a hosted data store.
+Production rooms are stored in Supabase in a single `rooms` table. Each row stores the room state as JSON and expires after roughly 24 hours of inactivity.
+
+Local development falls back to in-memory rooms unless these environment variables are set:
+
+```text
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+```
 
 ## Deployment Notes
 
-The app needs a Node host because rooms are shared through server state. Static-only hosting is not enough unless room sync is moved to a backend service.
+The app is deployed on Vercel. Supabase credentials must be configured as server-side Vercel environment variables.
