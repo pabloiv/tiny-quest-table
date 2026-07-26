@@ -386,7 +386,7 @@ function wireCurrentTab(character, isGuide) {
     state.draft.name = form.get("name").toString();
     state.draft.special = form.get("special").toString();
     try {
-      const data = await api(`/api/rooms/${state.room.id}/character`, {
+      const data = await api("/api/rooms", {
         method: "POST",
         body: JSON.stringify({ roomId: state.room.id, action: "character", clientId: state.clientId, character: state.draft })
       });
@@ -434,7 +434,7 @@ function wireCurrentTab(character, isGuide) {
   app.querySelectorAll("[data-roll]").forEach((button) => {
     button.addEventListener("click", async () => {
       try {
-        const data = await api(`/api/rooms/${state.room.id}/roll`, {
+        const data = await api("/api/rooms", {
           method: "POST",
           body: JSON.stringify({ roomId: state.room.id, action: "roll", clientId: state.clientId, stat: button.dataset.roll })
         });
@@ -451,7 +451,7 @@ function wireCurrentTab(character, isGuide) {
       const target = Number(button.dataset.heart);
       const hearts = character.hearts === target ? target - 1 : target;
       try {
-        const data = await api(`/api/rooms/${state.room.id}/heart`, {
+        const data = await api("/api/rooms", {
           method: "POST",
           body: JSON.stringify({ roomId: state.room.id, action: "heart", clientId: state.clientId, hearts })
         });
@@ -465,7 +465,7 @@ function wireCurrentTab(character, isGuide) {
   app.querySelector("[data-action='guide-save']")?.addEventListener("click", async () => {
     if (!isGuide) return;
     try {
-      const data = await api(`/api/rooms/${state.room.id}/guide`, {
+      const data = await api("/api/rooms", {
         method: "POST",
         body: JSON.stringify({
           roomId: state.room.id,
@@ -484,7 +484,7 @@ function wireCurrentTab(character, isGuide) {
   app.querySelectorAll("[data-difficulty]").forEach((button) => {
     button.addEventListener("click", async () => {
       try {
-        const data = await api(`/api/rooms/${state.room.id}/guide`, {
+        const data = await api("/api/rooms", {
           method: "POST",
           body: JSON.stringify({
             roomId: state.room.id,
