@@ -500,6 +500,37 @@ h2 {
   opacity: 0.9;
 }
 
+.special-action {
+  min-height: 68px;
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  text-align: left;
+  padding: 12px 14px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(220, 163, 58, 0.22), transparent 58%),
+    #fffdf7;
+  color: var(--ink);
+  box-shadow: 0 3px 0 #18211e;
+}
+
+.special-action strong {
+  font-size: 1rem;
+}
+
+.special-action span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.special-action:disabled {
+  background: #ece8dd;
+  box-shadow: none;
+}
+
 .strong {
   background: linear-gradient(145deg, #d86d55, #9f493b);
 }

@@ -8,6 +8,7 @@ Mobile-first, QR-first tabletop roleplaying helper for fast shared play.
 - Scannable QR join flow with room-code backup
 - Simple point-buy heroes
 - Four stats: Strong, Quick, Clever, Cool
+- Named Special Thing attached to one stat, usable once per scene for +2
 - One-tap rolls and shared table log
 - Heart tracker
 - Guide controls for scene and difficulty

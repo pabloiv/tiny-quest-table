@@ -26,17 +26,35 @@ function blankDraft() {
     name: "",
     color: colors[0],
     avatar: avatars[0],
-    special: "",
+    special: { name: "", stat: "cool", usedSceneId: null },
     stats: { strong: 0, quick: 0, clever: 0, cool: 0 }
   };
 }
 
+function normalizeSpecial(special) {
+  if (typeof special === "string") return { name: special, stat: "cool", usedSceneId: null };
+  return {
+    name: special?.name || "",
+    stat: stats.some(([key]) => key === special?.stat) ? special.stat : "cool",
+    usedSceneId: special?.usedSceneId || null
+  };
+}
+
+function statLabel(key) {
+  return stats.find(([statKey]) => statKey === key)?.[1] || "Cool";
+}
+
+function specialRollLabel(statKey, statValue) {
+  return `${statLabel(statKey)} +${statValue}, special +2`;
+}
+
 function draftFromCharacter(character) {
+  const special = normalizeSpecial(character.special);
   return {
     name: character.name,
     color: character.color,
     avatar: character.avatar,
-    special: character.special,
+    special,
     stats: { ...character.stats }
   };
 }
@@ -93,7 +111,7 @@ function syncDraftFromForm() {
   const name = document.querySelector("#hero-name");
   const special = document.querySelector("#special");
   if (name) state.draft.name = name.value;
-  if (special) state.draft.special = special.value;
+  if (special) state.draft.special.name = special.value;
 }
 
 async function api(path, options = {}) {
@@ -243,6 +261,7 @@ function renderQr() {
 
 function renderBuilder(character) {
   const draft = state.draft;
+  draft.special = normalizeSpecial(draft.special);
   const spent = Object.values(draft.stats).reduce((sum, value) => sum + value, 0);
   return h`
     <form class="screen" data-action="save-character">
@@ -276,7 +295,14 @@ function renderBuilder(character) {
       <section class="panel screen">
         <div class="field">
           <label for="special">Special thing</label>
-          <textarea class="textarea" id="special" name="special" maxlength="60" placeholder="Glowing shield">${escapeHtml(draft.special)}</textarea>
+          <input class="input" id="special" name="special" maxlength="44" value="${escapeHtml(draft.special.name)}" placeholder="Glowing shield" />
+        </div>
+        <div class="field">
+          <label>Attached stat</label>
+          <div class="compact-grid">
+            ${stats.map(([key, label]) => `<button type="button" class="difficulty ${draft.special.stat === key ? "active" : ""}" data-special-stat="${key}">${label}</button>`).join("")}
+          </div>
+          <p class="hint">Once per scene, use it for +2 on one roll with this stat.</p>
         </div>
         <button class="button">Save Hero</button>
       </section>
@@ -313,6 +339,9 @@ function renderPlay(character) {
       ${renderTableLog()}
     `;
   }
+  const special = normalizeSpecial(character.special);
+  const specialUsed = special.usedSceneId === state.room.sceneId;
+  const specialStatValue = character.stats[special.stat] || 0;
   return h`
     <div class="play-layout">
       <section class="panel screen">
@@ -320,7 +349,7 @@ function renderPlay(character) {
           <div class="avatar" style="background:${escapeHtml(character.color)}">${avatarText[character.avatar] || "*"}</div>
           <div>
             <h2>${escapeHtml(character.name)}</h2>
-            <p class="hint">${escapeHtml(character.special)}</p>
+            <p class="hint">${escapeHtml(special.name)} · ${statLabel(special.stat)} +2 once per scene</p>
           </div>
         </div>
         <div class="hearts">
@@ -329,6 +358,10 @@ function renderPlay(character) {
         <div class="roll-grid">
           ${stats.map(([key, label, help]) => `<button class="roll-button ${key}" data-roll="${key}"><strong>${label} +${character.stats[key]}</strong><span>${help}</span></button>`).join("")}
         </div>
+        <button class="special-action" data-special-roll="${special.stat}" ${specialUsed ? "disabled" : ""}>
+          <strong>${specialUsed ? "Special used" : `Use ${escapeHtml(special.name)}`}</strong>
+          <span>${specialUsed ? "Available next scene" : specialRollLabel(special.stat, specialStatValue)}</span>
+        </button>
       </section>
       ${renderTableLog()}
     </div>
@@ -389,7 +422,7 @@ function wireCurrentTab(character, isGuide) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     state.draft.name = form.get("name").toString();
-    state.draft.special = form.get("special").toString();
+    state.draft.special.name = form.get("special").toString();
     try {
       const data = await api("/api/rooms", {
         method: "POST",
@@ -415,6 +448,14 @@ function wireCurrentTab(character, isGuide) {
     button.addEventListener("click", () => {
       syncDraftFromForm();
       state.draft.avatar = button.dataset.avatar;
+      renderTable();
+    });
+  });
+
+  app.querySelectorAll("[data-special-stat]").forEach((button) => {
+    button.addEventListener("click", () => {
+      syncDraftFromForm();
+      state.draft.special.stat = button.dataset.specialStat;
       renderTable();
     });
   });
@@ -449,6 +490,24 @@ function wireCurrentTab(character, isGuide) {
         setError(error);
       }
     });
+  });
+
+  app.querySelector("[data-special-roll]")?.addEventListener("click", async (event) => {
+    try {
+      const data = await api("/api/rooms", {
+        method: "POST",
+        body: JSON.stringify({
+          roomId: state.room.id,
+          action: "roll",
+          clientId: state.clientId,
+          stat: event.currentTarget.dataset.specialRoll,
+          useSpecial: true
+        })
+      });
+      setRoom(data.room);
+    } catch (error) {
+      setError(error);
+    }
   });
 
   app.querySelectorAll("[data-heart]").forEach((button) => {

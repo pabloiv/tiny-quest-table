@@ -28,6 +28,7 @@ function publicRoom(room) {
     id: room.id,
     createdAt: room.createdAt,
     updatedAt: room.updatedAt,
+    sceneId: room.sceneId,
     characters: Object.values(room.characters),
     npcs: Object.values(room.npcs),
     log: room.log.slice(-80),
@@ -48,7 +49,10 @@ function toRow(room) {
 }
 
 function fromRow(row) {
-  return row?.state ? { ...row.state, guideToken: row.guide_token } : undefined;
+  if (!row?.state) return undefined;
+  const room = { ...row.state, guideToken: row.guide_token };
+  if (!room.sceneId) room.sceneId = "first-scene";
+  return room;
 }
 
 async function createRoom() {
@@ -62,6 +66,7 @@ async function createRoom() {
     characters: {},
     npcs: {},
     log: [{ id: makeId(6), type: "system", text: "Table started.", at: now() }],
+    sceneId: makeId(6),
     scene: "First Scene",
     difficulty: 4
   };
@@ -124,6 +129,26 @@ function cleanText(value, fallback, max = 40) {
   return (text || fallback).slice(0, max);
 }
 
+function cleanStat(value) {
+  return ["strong", "quick", "clever", "cool"].includes(value) ? value : "cool";
+}
+
+function normalizeSpecial(input) {
+  if (typeof input === "string") {
+    return {
+      name: cleanText(input, "Lucky charm", 44),
+      stat: "cool",
+      usedSceneId: null
+    };
+  }
+
+  return {
+    name: cleanText(input?.name, "Lucky charm", 44),
+    stat: cleanStat(input?.stat),
+    usedSceneId: input?.usedSceneId || null
+  };
+}
+
 function validateCharacter(input, clientId) {
   const stats = {
     strong: clamp(input.stats?.strong, 0, 3),
@@ -139,7 +164,7 @@ function validateCharacter(input, clientId) {
     name: cleanText(input.name, "New Hero", 28),
     color: cleanText(input.color, "#20a39e", 16),
     avatar: cleanText(input.avatar, "spark", 20),
-    special: cleanText(input.special, "Lucky charm", 60),
+    special: normalizeSpecial(input.special),
     hearts: clamp(input.hearts ?? 3, 0, 3),
     stats,
     updatedAt: now()
@@ -215,10 +240,20 @@ export default async function handler(req, res) {
   if (req.method === "POST" && action === "roll") {
     const character = room.characters[clientId];
     if (!character) return send(res, 400, { error: "Make a character first." });
-    const statKey = ["strong", "quick", "clever", "cool"].includes(input.stat) ? input.stat : "cool";
+    character.special = normalizeSpecial(character.special);
+    const statKey = cleanStat(input.stat);
+    const useSpecial = Boolean(input.useSpecial);
+    if (useSpecial && character.special.stat !== statKey) {
+      return send(res, 400, { error: "That Special Thing is attached to a different stat." });
+    }
+    if (useSpecial && character.special.usedSceneId === room.sceneId) {
+      return send(res, 400, { error: "Special Thing already used this scene." });
+    }
     const die = crypto.randomInt(1, 7);
-    const total = die + character.stats[statKey];
+    const specialBonus = useSpecial ? 2 : 0;
+    const total = die + character.stats[statKey] + specialBonus;
     const outcome = total >= 6 ? "strong success" : total >= room.difficulty ? "success" : "trouble";
+    if (useSpecial) character.special.usedSceneId = room.sceneId;
     addLog(room, {
       type: "roll",
       characterId: character.id,
@@ -226,9 +261,10 @@ export default async function handler(req, res) {
       stat: statKey,
       die,
       bonus: character.stats[statKey],
+      specialBonus,
       total,
       outcome,
-      text: `${character.name} rolled ${statKey}: ${die}+${character.stats[statKey]} = ${total} (${outcome}).`
+      text: `${character.name} rolled ${statKey}${useSpecial ? ` with ${character.special.name}` : ""}: ${die}+${character.stats[statKey]}${specialBonus ? `+${specialBonus}` : ""} = ${total} (${outcome}).`
     });
     await saveRoom(room);
     return send(res, 200, { room: publicRoom(room) });
@@ -252,7 +288,9 @@ export default async function handler(req, res) {
   if (req.method === "POST" && action === "guide") {
     if (input.guideToken !== room.guideToken) return send(res, 403, { error: "Guide access required." });
     if (input.scene !== undefined) {
-      room.scene = cleanText(input.scene, "Scene", 44);
+      const nextScene = cleanText(input.scene, "Scene", 44);
+      if (nextScene !== room.scene) room.sceneId = makeId(6);
+      room.scene = nextScene;
       addLog(room, { type: "system", text: `Scene: ${room.scene}` });
     }
     if (input.difficulty !== undefined) {
