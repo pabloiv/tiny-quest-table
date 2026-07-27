@@ -29,6 +29,33 @@ function now() {
   return Date.now();
 }
 
+function toRoman(value) {
+  const roman = [
+    [1000, "M"],
+    [900, "CM"],
+    [500, "D"],
+    [400, "CD"],
+    [100, "C"],
+    [90, "XC"],
+    [50, "L"],
+    [40, "XL"],
+    [10, "X"],
+    [9, "IX"],
+    [5, "V"],
+    [4, "IV"],
+    [1, "I"]
+  ];
+  let number = Math.max(1, Math.min(3999, Number(value) || 1));
+  let output = "";
+  for (const [amount, symbol] of roman) {
+    while (number >= amount) {
+      output += symbol;
+      number -= amount;
+    }
+  }
+  return output;
+}
+
 function publicRoom(room) {
   return {
     id: room.id,
@@ -36,6 +63,7 @@ function publicRoom(room) {
     createdAt: room.createdAt,
     updatedAt: room.updatedAt,
     sceneId: room.sceneId,
+    sceneNumber: room.sceneNumber ?? 0,
     characters: Object.values(room.characters),
     npcs: Object.values(room.npcs),
     log: room.log.slice(-80),
@@ -63,6 +91,7 @@ function createRoom() {
       }
     ],
     sceneId: makeId(6),
+    sceneNumber: 0,
     scene: "First Scene",
     difficulty: 4
   };
@@ -73,6 +102,7 @@ function createRoom() {
 function getRoom(id) {
   const room = rooms.get(id);
   if (!room) return undefined;
+  if (room.sceneNumber === undefined) room.sceneNumber = 0;
   room.accessedAt = now();
   return room;
 }
@@ -284,13 +314,19 @@ async function handleRoomAction(req, res, url, room, action, input) {
       const nextScene = cleanText(input.scene, "Scene", 44);
       if (nextScene !== room.scene) {
         room.sceneId = makeId(6);
+        room.sceneNumber = (room.sceneNumber ?? 0) + 1;
         room.scene = nextScene;
-        addLog(room, { type: "scene", text: `New scene: ${room.scene}. Special Things refreshed.` });
+        if (input.difficulty !== undefined) room.difficulty = clamp(input.difficulty, 3, 6);
+        addLog(room, {
+          type: "scene",
+          sceneNumber: room.sceneNumber,
+          scene: room.scene,
+          difficulty: room.difficulty,
+          text: `Chapter ${toRoman(room.sceneNumber)}: ${room.scene}\n-Special Things refreshed!-`
+        });
       }
-    }
-    if (input.difficulty !== undefined) {
-      room.difficulty = clamp(input.difficulty, 3, 6);
-      addLog(room, { type: "gm", text: `Difficulty set to ${room.difficulty}+.` });
+    } else if (input.difficulty !== undefined) {
+      return sendJson(res, 400, { error: "Start a new scene to change difficulty." });
     }
     if (input.note) addLog(room, { type: "gm", text: cleanText(input.note, "GM note", 120) });
     return sendJson(res, 200, { room: publicRoom(room) });

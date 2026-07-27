@@ -650,7 +650,12 @@ h2 {
 }
 
 .log-item.scene strong {
+  display: block;
   color: var(--violet);
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  line-height: 1.2;
+  text-transform: none;
 }
 
 .log-item.scene strong::before,
@@ -662,6 +667,12 @@ h2 {
   margin: 0 8px 4px;
   background: currentColor;
   opacity: 0.6;
+}
+
+.scene-refresh {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .log-item.system {

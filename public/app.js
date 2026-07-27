@@ -44,6 +44,33 @@ function statLabel(key) {
   return stats.find(([statKey]) => statKey === key)?.[1] || "Cool";
 }
 
+function toRoman(value) {
+  const roman = [
+    [1000, "M"],
+    [900, "CM"],
+    [500, "D"],
+    [400, "CD"],
+    [100, "C"],
+    [90, "XC"],
+    [50, "L"],
+    [40, "XL"],
+    [10, "X"],
+    [9, "IX"],
+    [5, "V"],
+    [4, "IV"],
+    [1, "I"]
+  ];
+  let number = Math.max(1, Math.min(3999, Number(value) || 1));
+  let output = "";
+  for (const [amount, symbol] of roman) {
+    while (number >= amount) {
+      output += symbol;
+      number -= amount;
+    }
+  }
+  return output;
+}
+
 function specialRollLabel(statKey, statValue) {
   return `${statLabel(statKey)} +${statValue}, special +2`;
 }
@@ -65,6 +92,7 @@ let state = {
   guideToken: localStorage.getItem("tqtGuideToken") || "",
   tab: "play",
   draft: blankDraft(),
+  newSceneDifficulty: null,
   error: "",
   poll: null
 };
@@ -400,27 +428,36 @@ function logEntryLabel(entry) {
 }
 
 function renderLogEntry(entry) {
+  if (entry.type === "scene") {
+    const title = entry.scene
+      ? `Chapter ${toRoman(entry.sceneNumber || 1)}: ${entry.scene}`
+      : entry.text?.split("\n")[0] || "New scene";
+    const refresh = entry.text?.split("\n")[1] || "-Special Things refreshed!-";
+    return `<article class="log-item scene"><strong>${escapeHtml(title)}</strong><span class="scene-refresh">${escapeHtml(refresh)}</span></article>`;
+  }
   return `<article class="log-item ${logEntryClass(entry)}"><strong>${escapeHtml(logEntryLabel(entry))}</strong><span>${escapeHtml(entry.text)}</span></article>`;
 }
 
 function renderGm(isGuide) {
   if (!isGuide) return renderQr();
+  const newSceneDifficulty = state.newSceneDifficulty ?? state.room.difficulty;
   return h`
     <section class="panel screen">
       <div class="gm-current">
         <p class="eyebrow">Current scene</p>
         <h2>${escapeHtml(state.room.scene)}</h2>
-        <p class="hint">Special Things refresh when the GM starts a new scene.</p>
+        <p class="hint">Difficulty ${state.room.difficulty}+. Special Things refresh when the GM starts a new scene.</p>
       </div>
       <div class="field">
         <label for="new-scene">New scene</label>
         <input class="input" id="new-scene" maxlength="44" placeholder="The bridge starts to crack" />
       </div>
       <div>
-        <strong>Difficulty</strong>
+        <strong>Scene difficulty</strong>
         <div class="compact-grid">
-          ${[4, 5, 6].map((value) => `<button class="difficulty ${state.room.difficulty === value ? "active" : ""}" data-difficulty="${value}">${value}+</button>`).join("")}
+          ${[4, 5, 6].map((value) => `<button class="difficulty ${newSceneDifficulty === value ? "active" : ""}" data-scene-difficulty="${value}">${value}+</button>`).join("")}
         </div>
+        <p class="hint">Applies when this scene starts.</p>
       </div>
       <button class="button" data-action="new-scene">Start New Scene</button>
     </section>
@@ -564,9 +601,11 @@ function wireCurrentTab(character, isGuide) {
           roomId: state.room.id,
           action: "guide",
           guideToken: state.guideToken,
-          scene: document.querySelector("#new-scene").value
+          scene: document.querySelector("#new-scene").value,
+          difficulty: state.newSceneDifficulty ?? state.room.difficulty
         })
       });
+      state.newSceneDifficulty = null;
       setRoom(data.room);
     } catch (error) {
       setError(error);
@@ -591,22 +630,10 @@ function wireCurrentTab(character, isGuide) {
     }
   });
 
-  app.querySelectorAll("[data-difficulty]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      try {
-        const data = await api("/api/rooms", {
-          method: "POST",
-          body: JSON.stringify({
-            roomId: state.room.id,
-            action: "guide",
-            guideToken: state.guideToken,
-            difficulty: Number(button.dataset.difficulty)
-          })
-        });
-        setRoom(data.room);
-      } catch (error) {
-        setError(error);
-      }
+  app.querySelectorAll("[data-scene-difficulty]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.newSceneDifficulty = Number(button.dataset.sceneDifficulty);
+      renderTable();
     });
   });
 }
