@@ -170,6 +170,31 @@ function setError(error) {
   renderTable();
 }
 
+function resetLocalTableState() {
+  if (state.poll) {
+    clearInterval(state.poll);
+    state.poll = null;
+  }
+  if (state.room?.id) sessionStorage.removeItem(`tqtGuide:${state.room.id}`);
+  state.room = null;
+  state.guideToken = "";
+  state.tab = "play";
+  state.draft = blankDraft();
+  state.newSceneDifficulty = null;
+  state.error = "";
+  state.clientId = makeClientId();
+  localStorage.setItem("tqtClientId", state.clientId);
+  localStorage.removeItem("tqtGuideToken");
+}
+
+async function startNewTable() {
+  if (!confirm("Start a new table on this device? The current table link will still work for anyone who has it.")) return;
+  resetLocalTableState();
+  history.replaceState(null, "", "/");
+  renderHome();
+  await startRoom();
+}
+
 async function startRoom() {
   try {
     const data = await api("/api/rooms", { method: "POST", body: "{}" });
@@ -480,6 +505,13 @@ function renderGm(isGuide) {
         ${state.room.characters.length ? state.room.characters.map((character) => `<div class="mini-card">${escapeHtml(character.name)} · ${character.hearts} hearts</div>`).join("") : `<p class="empty">No players yet.</p>`}
       </div>
     </section>
+    <section class="panel screen">
+      <div>
+        <strong>Table controls</strong>
+        <p class="hint">Start fresh when you are ready for a different group or session.</p>
+      </div>
+      <button class="button secondary danger" data-action="new-table">Start New Table</button>
+    </section>
     ${renderTableLog()}
   `;
 }
@@ -637,6 +669,8 @@ function wireCurrentTab(character, isGuide) {
       setError(error);
     }
   });
+
+  app.querySelector("[data-action='new-table']")?.addEventListener("click", startNewTable);
 
   app.querySelectorAll("[data-scene-difficulty]").forEach((button) => {
     button.addEventListener("click", () => {

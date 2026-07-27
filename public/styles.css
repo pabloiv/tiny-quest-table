@@ -231,6 +231,12 @@ h2 {
   color: var(--ink);
 }
 
+.button.danger {
+  border-color: #7d3327;
+  color: #7d3327;
+  background: linear-gradient(180deg, #fff8f3, #ead5cd);
+}
+
 .button.ghost {
   background: transparent;
   color: var(--teal-dark);
