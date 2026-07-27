@@ -311,6 +311,7 @@ async function handleRoomAction(req, res, url, room, action, input) {
   if (req.method === "POST" && action === "guide") {
     if (input.guideToken !== room.guideToken) return sendJson(res, 403, { error: "GM access required." });
     if (input.scene !== undefined) {
+      if (!String(input.scene || "").trim()) return sendJson(res, 400, { error: "Name the next chapter first." });
       const nextScene = cleanText(input.scene, "Scene", 44);
       if (nextScene !== room.scene) {
         room.sceneId = makeId(6);

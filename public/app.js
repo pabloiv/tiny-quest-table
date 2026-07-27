@@ -75,6 +75,11 @@ function specialRollLabel(statKey, statValue) {
   return `${statLabel(statKey)} +${statValue}, special +2`;
 }
 
+function displaySceneName(room) {
+  if (!room?.scene || room.scene === "Scene") return room?.sceneNumber ? "Untitled Scene" : "First Scene";
+  return room.scene;
+}
+
 function draftFromCharacter(character) {
   const special = normalizeSpecial(character.special);
   return {
@@ -246,7 +251,7 @@ function renderTable() {
   app.innerHTML = h`
     <header class="topbar">
       <div class="brand">
-        <h1>${escapeHtml(state.room.scene)}</h1>
+        <h1>${escapeHtml(displaySceneName(state.room))}</h1>
         <span>Room ${escapeHtml(state.room.id)} · ${state.room.difficulty}+</span>
       </div>
       <button class="icon-button" title="Show QR" data-tab="qr">QR</button>
@@ -441,25 +446,26 @@ function renderLogEntry(entry) {
 function renderGm(isGuide) {
   if (!isGuide) return renderQr();
   const newSceneDifficulty = state.newSceneDifficulty ?? state.room.difficulty;
+  const sceneName = displaySceneName(state.room);
   return h`
     <section class="panel screen">
       <div class="gm-current">
-        <p class="eyebrow">Current scene</p>
-        <h2>${escapeHtml(state.room.scene)}</h2>
-        <p class="hint">Difficulty ${state.room.difficulty}+. Special Things refresh when the GM starts a new scene.</p>
+        <p class="eyebrow">Now playing</p>
+        <h2>${escapeHtml(sceneName)}</h2>
+        <p class="hint">Difficulty ${state.room.difficulty}+. Specials refresh when the GM starts the next chapter.</p>
       </div>
       <div class="field">
-        <label for="new-scene">New scene</label>
+        <label for="new-scene">Next chapter</label>
         <input class="input" id="new-scene" maxlength="44" placeholder="The bridge starts to crack" />
       </div>
       <div>
-        <strong>Scene difficulty</strong>
+        <strong>Next difficulty</strong>
         <div class="compact-grid">
           ${[4, 5, 6].map((value) => `<button class="difficulty ${newSceneDifficulty === value ? "active" : ""}" data-scene-difficulty="${value}">${value}+</button>`).join("")}
         </div>
-        <p class="hint">Applies when this scene starts.</p>
+        <p class="hint">Takes effect when the chapter starts.</p>
       </div>
-      <button class="button" data-action="new-scene">Start New Scene</button>
+      <button class="button" data-action="new-scene">Start Chapter</button>
     </section>
     <section class="panel screen">
       <div class="field">
@@ -594,6 +600,8 @@ function wireCurrentTab(character, isGuide) {
 
   app.querySelector("[data-action='new-scene']")?.addEventListener("click", async () => {
     if (!isGuide) return;
+    const scene = document.querySelector("#new-scene").value.trim();
+    if (!scene) return setError(new Error("Name the next chapter first."));
     try {
       const data = await api("/api/rooms", {
         method: "POST",
@@ -601,7 +609,7 @@ function wireCurrentTab(character, isGuide) {
           roomId: state.room.id,
           action: "guide",
           guideToken: state.guideToken,
-          scene: document.querySelector("#new-scene").value,
+          scene,
           difficulty: state.newSceneDifficulty ?? state.room.difficulty
         })
       });
@@ -633,6 +641,7 @@ function wireCurrentTab(character, isGuide) {
   app.querySelectorAll("[data-scene-difficulty]").forEach((button) => {
     button.addEventListener("click", () => {
       state.newSceneDifficulty = Number(button.dataset.sceneDifficulty);
+      state.error = "";
       renderTable();
     });
   });
