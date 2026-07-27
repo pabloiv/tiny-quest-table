@@ -569,6 +569,17 @@ h2 {
   gap: 8px;
 }
 
+.gm-current {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 2px solid rgba(38, 52, 47, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(220, 163, 58, 0.16), transparent 58%),
+    #fffefb;
+}
+
 .log-item,
 .mini-card {
   padding: 12px;
@@ -580,12 +591,86 @@ h2 {
 
 .log-item {
   display: grid;
-  gap: 3px;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+  padding-left: 16px;
 }
 
 .log-item strong {
   text-transform: capitalize;
   font-family: var(--font-body);
+}
+
+.log-item::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: var(--muted);
+}
+
+.log-item.roll::before {
+  background: linear-gradient(180deg, var(--teal), var(--sky));
+}
+
+.log-item.roll strong {
+  color: var(--teal-dark);
+}
+
+.log-item.gm {
+  background:
+    linear-gradient(90deg, rgba(220, 163, 58, 0.18), transparent 46%),
+    #fffdf7;
+}
+
+.log-item.gm::before {
+  background: var(--gold);
+}
+
+.log-item.gm strong {
+  color: #7c5413;
+}
+
+.log-item.heart::before {
+  background: var(--coral);
+}
+
+.log-item.scene {
+  padding: 13px 16px;
+  text-align: center;
+  border-color: rgba(38, 52, 47, 0.26);
+  background:
+    linear-gradient(90deg, transparent 0 8%, rgba(93, 90, 168, 0.12) 8% 92%, transparent 92%),
+    #fffefb;
+}
+
+.log-item.scene::before {
+  display: none;
+}
+
+.log-item.scene strong {
+  color: var(--violet);
+}
+
+.log-item.scene strong::before,
+.log-item.scene strong::after {
+  content: "";
+  display: inline-block;
+  width: 30px;
+  height: 1px;
+  margin: 0 8px 4px;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.log-item.system {
+  border-style: dashed;
+  background: #f8f5eb;
+}
+
+.log-item.system::before {
+  background: var(--soft-line);
 }
 
 .compact-grid {

@@ -141,6 +141,7 @@ async function startRoom() {
   try {
     const data = await api("/api/rooms", { method: "POST", body: "{}" });
     state.guideToken = data.guideToken;
+    state.tab = "qr";
     localStorage.setItem("tqtGuideToken", state.guideToken);
     sessionStorage.setItem(`tqtGuide:${data.room.id}`, state.guideToken);
     history.replaceState(null, "", `/r/${data.room.id}?guide=${state.guideToken}`);
@@ -190,13 +191,13 @@ function renderHome() {
       </div>
       ${state.error ? `<p class="error">${escapeHtml(state.error)}</p>` : ""}
       <div class="button-row">
-        <button class="button" data-action="start">Start Table</button>
+        <button class="button" data-action="start">Start as GM</button>
         <form class="panel screen" data-action="join">
           <div class="field">
             <label for="room-code">Room code</label>
             <input class="input" id="room-code" name="code" autocomplete="off" inputmode="latin" placeholder="AB12CD" />
           </div>
-          <button class="button secondary">Join Table</button>
+          <button class="button secondary">Join as Player</button>
         </form>
       </div>
     </section>
@@ -226,11 +227,11 @@ function renderTable() {
     ${state.tab === "qr" ? renderQr() : ""}
     ${state.tab === "make" ? renderBuilder(character) : ""}
     ${state.tab === "play" ? renderPlay(character) : ""}
-    ${state.tab === "guide" ? renderGuide(isGuide) : ""}
+    ${state.tab === "guide" ? renderGm(isGuide) : ""}
     <nav class="tabs" aria-label="Table sections">
       <button class="${state.tab === "play" ? "active" : ""}" data-tab="play">Play</button>
       <button class="${state.tab === "make" ? "active" : ""}" data-tab="make">${character ? "Hero" : "Make"}</button>
-      <button class="${state.tab === (isGuide ? "guide" : "qr") ? "active" : ""}" data-tab="${isGuide ? "guide" : "qr"}">${isGuide ? "Guide" : "QR"}</button>
+      <button class="${state.tab === (isGuide ? "guide" : "qr") ? "active" : ""}" data-tab="${isGuide ? "guide" : "qr"}">${isGuide ? "GM" : "QR"}</button>
     </nav>
   `;
 
@@ -247,13 +248,12 @@ function renderTable() {
 }
 
 function renderQr() {
-  const playerUrl = `${location.origin}/r/${state.room.id}`;
   const qr = `/api/rooms?id=${encodeURIComponent(state.room.id)}&action=qr.svg`;
   return h`
     <section class="panel qr-wrap">
       <img alt="QR code for room ${escapeHtml(state.room.id)}" src="${qr}" />
       <div class="code">${escapeHtml(state.room.id)}</div>
-      <p class="hint">Players scan this to join. The code is backup.</p>
+      <p class="hint">Players scan this to join. The room code is backup.</p>
       <button class="button secondary" data-action="copy-url">Copy Join Link</button>
     </section>
   `;
@@ -377,19 +377,44 @@ function renderTableLog() {
         <p class="hint">Newest first</p>
       </div>
       <div class="list">
-        ${entries.length ? entries.map((entry) => `<article class="log-item"><strong>${escapeHtml(entry.type)}</strong><span>${escapeHtml(entry.text)}</span></article>`).join("") : `<p class="empty">No rolls yet.</p>`}
+        ${entries.length ? entries.map(renderLogEntry).join("") : `<p class="empty">No rolls yet.</p>`}
       </div>
     </section>
   `;
 }
 
-function renderGuide(isGuide) {
+function logEntryClass(entry) {
+  if (entry.type === "roll") return "roll player";
+  if (entry.type === "note" || entry.type === "gm") return "gm";
+  if (entry.type === "scene") return "scene";
+  if (entry.type === "heart") return "heart";
+  return "system";
+}
+
+function logEntryLabel(entry) {
+  if (entry.type === "roll") return entry.characterName ? `${entry.characterName} roll` : "Player roll";
+  if (entry.type === "note" || entry.type === "gm") return "GM";
+  if (entry.type === "scene") return "New scene";
+  if (entry.type === "heart") return "Hero";
+  return "System";
+}
+
+function renderLogEntry(entry) {
+  return `<article class="log-item ${logEntryClass(entry)}"><strong>${escapeHtml(logEntryLabel(entry))}</strong><span>${escapeHtml(entry.text)}</span></article>`;
+}
+
+function renderGm(isGuide) {
   if (!isGuide) return renderQr();
   return h`
     <section class="panel screen">
+      <div class="gm-current">
+        <p class="eyebrow">Current scene</p>
+        <h2>${escapeHtml(state.room.scene)}</h2>
+        <p class="hint">Special Things refresh when the GM starts a new scene.</p>
+      </div>
       <div class="field">
-        <label for="scene">Scene</label>
-        <input class="input" id="scene" value="${escapeHtml(state.room.scene)}" maxlength="44" />
+        <label for="new-scene">New scene</label>
+        <input class="input" id="new-scene" maxlength="44" placeholder="The bridge starts to crack" />
       </div>
       <div>
         <strong>Difficulty</strong>
@@ -397,11 +422,14 @@ function renderGuide(isGuide) {
           ${[4, 5, 6].map((value) => `<button class="difficulty ${state.room.difficulty === value ? "active" : ""}" data-difficulty="${value}">${value}+</button>`).join("")}
         </div>
       </div>
+      <button class="button" data-action="new-scene">Start New Scene</button>
+    </section>
+    <section class="panel screen">
       <div class="field">
-        <label for="guide-note">Scene note</label>
-        <textarea class="textarea" id="guide-note" maxlength="120" placeholder="The bridge starts to crack."></textarea>
+        <label for="gm-note">GM note</label>
+        <textarea class="textarea" id="gm-note" maxlength="120" placeholder="The lock clicks open."></textarea>
       </div>
-      <button class="button" data-action="guide-save">Update Scene</button>
+      <button class="button secondary" data-action="gm-note">Add GM Note</button>
     </section>
     <section class="panel screen">
       <strong>Players</strong>
@@ -527,7 +555,7 @@ function wireCurrentTab(character, isGuide) {
     });
   });
 
-  app.querySelector("[data-action='guide-save']")?.addEventListener("click", async () => {
+  app.querySelector("[data-action='new-scene']")?.addEventListener("click", async () => {
     if (!isGuide) return;
     try {
       const data = await api("/api/rooms", {
@@ -536,8 +564,25 @@ function wireCurrentTab(character, isGuide) {
           roomId: state.room.id,
           action: "guide",
           guideToken: state.guideToken,
-          scene: document.querySelector("#scene").value,
-          note: document.querySelector("#guide-note").value
+          scene: document.querySelector("#new-scene").value
+        })
+      });
+      setRoom(data.room);
+    } catch (error) {
+      setError(error);
+    }
+  });
+
+  app.querySelector("[data-action='gm-note']")?.addEventListener("click", async () => {
+    if (!isGuide) return;
+    try {
+      const data = await api("/api/rooms", {
+        method: "POST",
+        body: JSON.stringify({
+          roomId: state.room.id,
+          action: "guide",
+          guideToken: state.guideToken,
+          note: document.querySelector("#gm-note").value
         })
       });
       setRoom(data.room);
@@ -555,9 +600,7 @@ function wireCurrentTab(character, isGuide) {
             roomId: state.room.id,
             action: "guide",
             guideToken: state.guideToken,
-            difficulty: Number(button.dataset.difficulty),
-            scene: document.querySelector("#scene")?.value,
-            note: document.querySelector("#guide-note")?.value
+            difficulty: Number(button.dataset.difficulty)
           })
         });
         setRoom(data.room);

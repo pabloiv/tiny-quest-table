@@ -286,18 +286,20 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "POST" && action === "guide") {
-    if (input.guideToken !== room.guideToken) return send(res, 403, { error: "Guide access required." });
+    if (input.guideToken !== room.guideToken) return send(res, 403, { error: "GM access required." });
     if (input.scene !== undefined) {
       const nextScene = cleanText(input.scene, "Scene", 44);
-      if (nextScene !== room.scene) room.sceneId = makeId(6);
-      room.scene = nextScene;
-      addLog(room, { type: "system", text: `Scene: ${room.scene}` });
+      if (nextScene !== room.scene) {
+        room.sceneId = makeId(6);
+        room.scene = nextScene;
+        addLog(room, { type: "scene", text: `New scene: ${room.scene}. Special Things refreshed.` });
+      }
     }
     if (input.difficulty !== undefined) {
       room.difficulty = clamp(input.difficulty, 3, 6);
-      addLog(room, { type: "system", text: `Difficulty set to ${room.difficulty}+.` });
+      addLog(room, { type: "gm", text: `Difficulty set to ${room.difficulty}+.` });
     }
-    if (input.note) addLog(room, { type: "note", text: cleanText(input.note, "Guide note", 120) });
+    if (input.note) addLog(room, { type: "gm", text: cleanText(input.note, "GM note", 120) });
     await saveRoom(room);
     return send(res, 200, { room: publicRoom(room) });
   }
