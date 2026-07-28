@@ -237,6 +237,12 @@ h2 {
   background: linear-gradient(180deg, #fff8f3, #ead5cd);
 }
 
+.button.compact {
+  min-height: 46px;
+  font-family: var(--font-body);
+  font-weight: 900;
+}
+
 .button.ghost {
   background: transparent;
   color: var(--teal-dark);
@@ -642,6 +648,18 @@ h2 {
   background: var(--coral);
 }
 
+.log-item.heart strong {
+  color: #9d442f;
+}
+
+.heart-log {
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--coral);
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
 .log-item.scene {
   padding: 13px 16px;
   text-align: center;
@@ -688,6 +706,28 @@ h2 {
 
 .log-item.system::before {
   background: var(--soft-line);
+}
+
+.table-options {
+  margin-top: -4px;
+  border: 0;
+  color: var(--muted);
+}
+
+.table-options summary {
+  width: fit-content;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.table-options-body {
+  display: grid;
+  gap: 10px;
+  padding: 10px 0 2px;
 }
 
 .compact-grid {

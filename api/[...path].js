@@ -309,7 +309,8 @@ export default async function handler(req, res) {
       type: "heart",
       characterId: character.id,
       characterName: character.name,
-      text: `${character.name} now has ${character.hearts} heart${character.hearts === 1 ? "" : "s"}.`
+      hearts: character.hearts,
+      text: `${character.name} has ${character.hearts}/3 hearts.`
     });
     await saveRoom(room);
     return send(res, 200, { room: publicRoom(room) });

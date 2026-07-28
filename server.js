@@ -303,7 +303,8 @@ async function handleRoomAction(req, res, url, room, action, input) {
       type: "heart",
       characterId: character.id,
       characterName: character.name,
-      text: `${character.name} now has ${character.hearts} heart${character.hearts === 1 ? "" : "s"}.`
+      hearts: character.hearts,
+      text: `${character.name} has ${character.hearts}/3 hearts.`
     });
     return sendJson(res, 200, { room: publicRoom(room) });
   }

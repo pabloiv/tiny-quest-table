@@ -453,7 +453,7 @@ function logEntryLabel(entry) {
   if (entry.type === "roll") return entry.characterName ? `${entry.characterName} roll` : "Player roll";
   if (entry.type === "note" || entry.type === "gm") return "GM";
   if (entry.type === "scene") return "New scene";
-  if (entry.type === "heart") return "Hero";
+  if (entry.type === "heart") return entry.characterName ? `${entry.characterName} hearts` : "Hearts";
   return "System";
 }
 
@@ -465,7 +465,25 @@ function renderLogEntry(entry) {
     const refresh = entry.text?.split("\n")[1] || "-Special Things refreshed!-";
     return `<article class="log-item scene"><strong>${escapeHtml(title)}</strong><span class="scene-refresh">${escapeHtml(refresh)}</span></article>`;
   }
+  if (entry.type === "heart") {
+    const hearts = Number.isFinite(entry.hearts) ? entry.hearts : null;
+    const heartMarks = hearts === null ? "" : `<span class="heart-log" aria-hidden="true">${[1, 2, 3].map((heart) => (heart <= hearts ? "♥" : "♡")).join("")}</span>`;
+    const text = entry.text || `${entry.characterName || "Hero"} changed hearts.`;
+    return `<article class="log-item heart"><strong>${escapeHtml(logEntryLabel(entry))}</strong><span>${heartMarks}${escapeHtml(text)}</span></article>`;
+  }
   return `<article class="log-item ${logEntryClass(entry)}"><strong>${escapeHtml(logEntryLabel(entry))}</strong><span>${escapeHtml(entry.text)}</span></article>`;
+}
+
+function renderTableOptions() {
+  return h`
+    <details class="table-options">
+      <summary>Table options</summary>
+      <div class="table-options-body">
+        <p class="hint">Start fresh for a different group or session.</p>
+        <button class="button secondary danger compact" data-action="new-table">Start New Table</button>
+      </div>
+    </details>
+  `;
 }
 
 function renderGm(isGuide) {
@@ -505,14 +523,8 @@ function renderGm(isGuide) {
         ${state.room.characters.length ? state.room.characters.map((character) => `<div class="mini-card">${escapeHtml(character.name)} · ${character.hearts} hearts</div>`).join("") : `<p class="empty">No players yet.</p>`}
       </div>
     </section>
-    <section class="panel screen">
-      <div>
-        <strong>Table controls</strong>
-        <p class="hint">Start fresh when you are ready for a different group or session.</p>
-      </div>
-      <button class="button secondary danger" data-action="new-table">Start New Table</button>
-    </section>
     ${renderTableLog()}
+    ${renderTableOptions()}
   `;
 }
 
