@@ -267,6 +267,7 @@ export default async function handler(req, res) {
       type: "roll",
       characterId: character.id,
       characterName: character.name,
+      characterColor: character.color,
       stat: statKey,
       die,
       bonus: character.stats[statKey],
@@ -288,6 +289,7 @@ export default async function handler(req, res) {
       type: "heart",
       characterId: character.id,
       characterName: character.name,
+      characterColor: character.color,
       hearts: character.hearts,
       text: `${character.name} has ${character.hearts}/3 hearts.`
     });

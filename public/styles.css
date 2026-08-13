@@ -678,6 +678,13 @@ h2 {
   font-family: var(--font-body);
 }
 
+.log-title-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .log-item::before {
   content: "";
   position: absolute;
@@ -687,11 +694,43 @@ h2 {
 }
 
 .log-item.roll::before {
-  background: linear-gradient(180deg, var(--teal), var(--sky));
+  background: var(--entry-color, var(--teal));
 }
 
-.log-item.roll strong {
-  color: var(--teal-dark);
+.log-item.roll strong,
+.log-item.heart strong {
+  color: var(--entry-color, var(--teal-dark));
+}
+
+.log-item.outcome-strong-success {
+  background:
+    linear-gradient(90deg, rgba(220, 163, 58, 0.18), transparent 58%),
+    #fffefb;
+}
+
+.log-item.outcome-success {
+  background:
+    linear-gradient(90deg, rgba(31, 157, 146, 0.12), transparent 58%),
+    #fffefb;
+}
+
+.log-item.outcome-trouble {
+  background:
+    linear-gradient(90deg, rgba(238, 108, 77, 0.16), transparent 58%),
+    #fff9f4;
+}
+
+.outcome-badge {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  color: var(--entry-color, var(--teal-dark));
+  background: rgba(255, 255, 255, 0.58);
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .log-item.gm {
@@ -709,11 +748,7 @@ h2 {
 }
 
 .log-item.heart::before {
-  background: var(--coral);
-}
-
-.log-item.heart strong {
-  color: #9d442f;
+  background: var(--entry-color, var(--coral));
 }
 
 .heart-log {

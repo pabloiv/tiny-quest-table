@@ -444,7 +444,7 @@ function renderTableLog() {
 }
 
 function logEntryClass(entry) {
-  if (entry.type === "roll") return "roll player";
+  if (entry.type === "roll") return `roll player ${outcomeClass(entry)}`;
   if (entry.type === "note" || entry.type === "gm") return "gm";
   if (entry.type === "scene") return "scene";
   if (entry.type === "heart") return "heart";
@@ -459,6 +459,26 @@ function logEntryLabel(entry) {
   return "System";
 }
 
+function characterLogColor(entry) {
+  const fallback = "#5c6b66";
+  if (entry.characterColor) return entry.characterColor;
+  return state.room?.characters.find((character) => character.id === entry.characterId)?.color || fallback;
+}
+
+function logEntryStyle(entry) {
+  return ` style="--entry-color:${escapeHtml(characterLogColor(entry))}"`;
+}
+
+function outcomeClass(entry) {
+  return `outcome-${String(entry.outcome || "success").replace(/\s+/g, "-")}`;
+}
+
+function outcomeLabel(entry) {
+  if (entry.outcome === "strong success") return "Strong Success";
+  if (entry.outcome === "trouble") return "Trouble";
+  return "Success";
+}
+
 function renderLogEntry(entry) {
   if (entry.type === "scene") {
     const title = entry.scene
@@ -471,7 +491,18 @@ function renderLogEntry(entry) {
     const hearts = Number.isFinite(entry.hearts) ? entry.hearts : null;
     const heartMarks = hearts === null ? "" : `<span class="heart-log" aria-hidden="true">${[1, 2, 3].map((heart) => (heart <= hearts ? "♥" : "♡")).join("")}</span>`;
     const text = entry.text || `${entry.characterName || "Hero"} changed hearts.`;
-    return `<article class="log-item heart"><strong>${escapeHtml(logEntryLabel(entry))}</strong><span>${heartMarks}${escapeHtml(text)}</span></article>`;
+    return `<article class="log-item heart"${logEntryStyle(entry)}><strong>${escapeHtml(logEntryLabel(entry))}</strong><span>${heartMarks}${escapeHtml(text)}</span></article>`;
+  }
+  if (entry.type === "roll") {
+    return h`
+      <article class="log-item ${logEntryClass(entry)}"${logEntryStyle(entry)}>
+        <div class="log-title-row">
+          <strong>${escapeHtml(logEntryLabel(entry))}</strong>
+          <span class="outcome-badge">${escapeHtml(outcomeLabel(entry))}</span>
+        </div>
+        <span>${escapeHtml(entry.text)}</span>
+      </article>
+    `;
   }
   return `<article class="log-item ${logEntryClass(entry)}"><strong>${escapeHtml(logEntryLabel(entry))}</strong><span>${escapeHtml(entry.text)}</span></article>`;
 }
