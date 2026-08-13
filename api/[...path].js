@@ -16,6 +16,15 @@ function makeId(bytes = 4) {
   return crypto.randomBytes(bytes).toString("base64url").toUpperCase();
 }
 
+function makeRoomId(length = 6) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let id = "";
+  for (let i = 0; i < length; i += 1) {
+    id += alphabet[crypto.randomInt(0, alphabet.length)];
+  }
+  return id;
+}
+
 function now() {
   return Date.now();
 }
@@ -83,7 +92,7 @@ function fromRow(row) {
 }
 
 async function createRoom() {
-  const id = makeId(4);
+  const id = makeRoomId();
   const room = {
     id,
     guideToken: makeId(12),
