@@ -72,7 +72,7 @@ function toRoman(value) {
 }
 
 function specialRollLabel(statKey, statValue) {
-  return `${statLabel(statKey)} +${statValue}, special +2`;
+  return `${statLabel(statKey)} +${statValue}, special +1`;
 }
 
 function displaySceneName(room) {
@@ -360,7 +360,7 @@ function renderBuilder(character) {
           <div class="compact-grid">
             ${stats.map(([key, label]) => `<button type="button" class="difficulty ${draft.special.stat === key ? "active" : ""}" data-special-stat="${key}">${label}</button>`).join("")}
           </div>
-          <p class="hint">Once per scene, use it for +2 on one roll with this stat.</p>
+          <p class="hint">Once per scene, use it for +1 on one roll with this stat.</p>
         </div>
         <button class="button">Save Hero</button>
       </section>
@@ -407,7 +407,7 @@ function renderPlay(character) {
           <div class="avatar" style="background:${escapeHtml(character.color)}">${avatarText[character.avatar] || "*"}</div>
           <div>
             <h2>${escapeHtml(character.name)}</h2>
-            <p class="hint">${escapeHtml(special.name)} · ${statLabel(special.stat)} +2 once per scene</p>
+            <p class="hint">${escapeHtml(special.name)} · ${statLabel(special.stat)} +1 once per scene</p>
           </div>
         </div>
         <div class="hearts">
@@ -420,6 +420,7 @@ function renderPlay(character) {
           <strong>${specialUsed ? "Special used" : `Use ${escapeHtml(special.name)}`}</strong>
           <span>${specialUsed ? "Available next scene" : specialRollLabel(special.stat, specialStatValue)}</span>
         </button>
+        ${renderRulesPanel()}
       </section>
       ${renderTableLog()}
     </div>
@@ -486,6 +487,34 @@ function renderTableOptions() {
   `;
 }
 
+function renderRulesPanel() {
+  return h`
+    <details class="rules-panel">
+      <summary>Rules</summary>
+      <div class="rules-body">
+        <span>Roll 1d6 + stat.</span>
+        <span>Meet the difficulty to succeed.</span>
+        <span>Beat it by 2 for a strong success.</span>
+        <span>Special Thing adds +1 once per chapter.</span>
+      </div>
+    </details>
+  `;
+}
+
+function renderGmPrinciples() {
+  return h`
+    <div class="gm-principles">
+      <strong>GM principles</strong>
+      <div class="principle-list">
+        <span>Ask what they do next.</span>
+        <span>Make trouble concrete.</span>
+        <span>Let clever plans lower the difficulty.</span>
+      </div>
+      <p class="hint">Trouble means a cost, complication, or worse position, not a full stop.</p>
+    </div>
+  `;
+}
+
 function renderGm(isGuide) {
   if (!isGuide) return renderQr();
   const newSceneDifficulty = state.newSceneDifficulty ?? state.room.difficulty;
@@ -504,11 +533,13 @@ function renderGm(isGuide) {
       <div>
         <strong>Next difficulty</strong>
         <div class="compact-grid">
-          ${[4, 5, 6].map((value) => `<button class="difficulty ${newSceneDifficulty === value ? "active" : ""}" data-scene-difficulty="${value}">${value}+</button>`).join("")}
+          ${[5, 6, 7].map((value) => `<button class="difficulty ${newSceneDifficulty === value ? "active" : ""}" data-scene-difficulty="${value}">${value}+</button>`).join("")}
         </div>
         <p class="hint">Takes effect when the chapter starts.</p>
       </div>
       <button class="button" data-action="new-scene">Start Chapter</button>
+      ${renderGmPrinciples()}
+      ${renderRulesPanel()}
     </section>
     <section class="panel screen">
       <div class="field">

@@ -592,6 +592,54 @@ h2 {
     #fffefb;
 }
 
+.rules-panel {
+  margin-top: -2px;
+  border: 0;
+  color: var(--muted);
+}
+
+.rules-panel summary {
+  width: fit-content;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.rules-body {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px 2px;
+  border-left: 3px solid var(--soft-line);
+  font-size: 0.86rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.gm-principles {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 2px solid rgba(38, 52, 47, 0.16);
+  border-radius: 8px;
+  background: #f8f5eb;
+}
+
+.gm-principles strong {
+  font-size: 0.94rem;
+}
+
+.principle-list {
+  display: grid;
+  gap: 5px;
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
 .log-item,
 .mini-card {
   padding: 12px;

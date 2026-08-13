@@ -8,7 +8,7 @@ Mobile-first, QR-first tabletop roleplaying helper for fast shared play.
 - Scannable QR join flow with room-code backup
 - Simple point-buy heroes
 - Four stats: Strong, Quick, Clever, Cool
-- Named Special Thing attached to one stat, usable once per scene for +2
+- Named Special Thing attached to one stat, usable once per scene for +1
 - One-tap rolls and shared table log
 - Heart tracker
 - Guide controls for scene and difficulty
@@ -18,30 +18,16 @@ Mobile-first, QR-first tabletop roleplaying helper for fast shared play.
 - Fonts: Fredoka and Atkinson Hyperlegible from Google Fonts.
 - Visual direction: lightweight quest-map interface, tactile mobile controls, and game-icon silhouettes inspired by free tabletop/game UI resources.
 
-## Run Locally
+## Validate
 
 ```sh
 npm install
-npm run start
-```
-
-Open:
-
-```text
-http://localhost:8787
-```
-
-For phone testing on the same Wi-Fi, use the computer's LAN address instead of localhost, for example:
-
-```text
-http://192.168.1.12:8787
+npm run check
 ```
 
 ## Current Storage Model
 
-Production rooms are stored in Supabase in a single `rooms` table. Each row stores the room state as JSON and expires after roughly 24 hours of inactivity.
-
-Local development falls back to in-memory rooms unless these environment variables are set:
+Rooms are stored in Supabase in a single `rooms` table. Each row stores the room state as JSON and expires after roughly 24 hours of inactivity. The Vercel API handler is the backend source of truth and requires these server-side environment variables:
 
 ```text
 SUPABASE_URL

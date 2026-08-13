@@ -2,9 +2,6 @@ import crypto from "node:crypto";
 import QRCode from "qrcode";
 import { createClient } from "@supabase/supabase-js";
 
-const rooms = globalThis.__tinyQuestRooms || new Map();
-globalThis.__tinyQuestRooms = rooms;
-
 const ttlMs = 1000 * 60 * 60 * 24;
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -81,6 +78,7 @@ function fromRow(row) {
   const room = { ...row.state, guideToken: row.guide_token };
   if (!room.sceneId) room.sceneId = "first-scene";
   if (room.sceneNumber === undefined) room.sceneNumber = 0;
+  room.difficulty = clamp(room.difficulty || 6, 5, 7);
   return room;
 }
 
@@ -98,56 +96,33 @@ async function createRoom() {
     sceneId: makeId(6),
     sceneNumber: 0,
     scene: "First Scene",
-    difficulty: 4
+    difficulty: 6
   };
-  if (supabase) {
-    const { error } = await supabase.from("rooms").insert(toRow(room));
-    if (error) throw error;
-  } else {
-    rooms.set(id, room);
-  }
+  const { error } = await supabase.from("rooms").insert(toRow(room));
+  if (error) throw error;
   return room;
 }
 
 async function getRoom(id) {
-  if (supabase) {
-    const { data, error } = await supabase.from("rooms").select("id, guide_token, state, expires_at").eq("id", id).maybeSingle();
-    if (error) throw error;
-    const expiresAt = data?.expires_at ? Date.parse(data.expires_at) : 0;
-    if (!data || expiresAt <= now()) return undefined;
-    const room = fromRow(data);
-    room.accessedAt = now();
-    await saveRoom(room, { touchOnly: true });
-    return room;
-  }
-
-  const room = rooms.get(id);
-  if (!room) return undefined;
+  const { data, error } = await supabase.from("rooms").select("id, guide_token, state, expires_at").eq("id", id).maybeSingle();
+  if (error) throw error;
+  const expiresAt = data?.expires_at ? Date.parse(data.expires_at) : 0;
+  if (!data || expiresAt <= now()) return undefined;
+  const room = fromRow(data);
   room.accessedAt = now();
+  await saveRoom(room, { touchOnly: true });
   return room;
 }
 
 async function saveRoom(room, options = {}) {
   if (!options.touchOnly) room.updatedAt = now();
   room.accessedAt = now();
-  if (supabase) {
-    const { error } = await supabase.from("rooms").upsert(toRow(room), { onConflict: "id" });
-    if (error) throw error;
-  } else {
-    rooms.set(room.id, room);
-  }
+  const { error } = await supabase.from("rooms").upsert(toRow(room), { onConflict: "id" });
+  if (error) throw error;
 }
 
 async function cleanRooms() {
-  if (supabase) {
-    await supabase.from("rooms").delete().lt("expires_at", new Date().toISOString());
-    return;
-  }
-
-  const cutoff = now() - ttlMs;
-  for (const [id, room] of rooms.entries()) {
-    if (room.accessedAt < cutoff) rooms.delete(id);
-  }
+  await supabase.from("rooms").delete().lt("expires_at", new Date().toISOString());
 }
 
 function clamp(value, min, max) {
@@ -212,6 +187,10 @@ function send(res, status, payload) {
 }
 
 export default async function handler(req, res) {
+  if (!supabase) {
+    return send(res, 500, { error: "Server storage is not configured." });
+  }
+
   await cleanRooms();
 
   const url = new URL(req.url || "/", `https://${req.headers.host || "localhost"}`);
@@ -280,9 +259,9 @@ export default async function handler(req, res) {
       return send(res, 400, { error: "Special Thing already used this scene." });
     }
     const die = crypto.randomInt(1, 7);
-    const specialBonus = useSpecial ? 2 : 0;
+    const specialBonus = useSpecial ? 1 : 0;
     const total = die + character.stats[statKey] + specialBonus;
-    const outcome = total >= 6 ? "strong success" : total >= room.difficulty ? "success" : "trouble";
+    const outcome = total >= room.difficulty + 2 ? "strong success" : total >= room.difficulty ? "success" : "trouble";
     if (useSpecial) character.special.usedSceneId = room.sceneId;
     addLog(room, {
       type: "roll",
@@ -325,7 +304,7 @@ export default async function handler(req, res) {
         room.sceneId = makeId(6);
         room.sceneNumber = (room.sceneNumber ?? 0) + 1;
         room.scene = nextScene;
-        if (input.difficulty !== undefined) room.difficulty = clamp(input.difficulty, 3, 6);
+        if (input.difficulty !== undefined) room.difficulty = clamp(input.difficulty, 5, 7);
         addLog(room, {
           type: "scene",
           sceneNumber: room.sceneNumber,
