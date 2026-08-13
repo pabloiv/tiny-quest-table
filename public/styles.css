@@ -346,13 +346,14 @@ h2 {
 
 .stepper {
   display: grid;
-  grid-template-columns: 38px 34px 38px;
+  grid-template-columns: 44px 34px 44px;
   align-items: center;
   gap: 6px;
 }
 
 .stepper button {
-  height: 38px;
+  min-width: 44px;
+  height: 44px;
   border-radius: 8px;
   border: 2px solid var(--line);
   background: var(--gold);
@@ -382,6 +383,21 @@ h2 {
   border: 2px solid var(--line);
   box-shadow: 0 2px 0 rgba(24, 33, 30, 0.18);
   font-weight: 900;
+}
+
+.avatar-choice {
+  min-height: 52px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--avatar-color), #fff 18%), color-mix(in srgb, var(--avatar-color), #17231f 14%));
+  color: #fff;
+  font-size: 1.16rem;
+  text-shadow: 0 1px 0 rgba(23, 35, 31, 0.32);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.24), 0 3px 0 #18211e;
+}
+
+.avatar-choice:nth-child(4) {
+  color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.32);
 }
 
 .choice.active {
@@ -461,8 +477,8 @@ h2 {
 }
 
 .heart {
-  min-width: 42px;
-  height: 38px;
+  min-width: 48px;
+  height: 48px;
   border-radius: 8px;
   border: 2px solid var(--line);
   background: var(--rose);

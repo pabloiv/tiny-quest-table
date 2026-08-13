@@ -99,7 +99,8 @@ let state = {
   draft: blankDraft(),
   newSceneDifficulty: null,
   error: "",
-  poll: null
+  poll: null,
+  pendingRoll: false
 };
 
 localStorage.setItem("tqtClientId", state.clientId);
@@ -337,7 +338,7 @@ function renderBuilder(character) {
         <div class="field">
           <label>Avatar</label>
           <div class="avatar-grid">
-            ${avatars.map((avatar) => `<button type="button" class="choice ${draft.avatar === avatar ? "active" : ""}" data-avatar="${avatar}">${avatarText[avatar]}</button>`).join("")}
+            ${avatars.map((avatar, index) => `<button type="button" class="choice avatar-choice ${draft.avatar === avatar ? "active" : ""}" style="--avatar-color:${colors[index]}" data-avatar="${avatar}">${avatarText[avatar]}</button>`).join("")}
           </div>
         </div>
       </section>
@@ -414,9 +415,9 @@ function renderPlay(character) {
           ${[1, 2, 3].map((heart) => `<button class="heart ${heart > character.hearts ? "empty" : ""}" data-heart="${heart}">♥</button>`).join("")}
         </div>
         <div class="roll-grid">
-          ${stats.map(([key, label, help]) => `<button class="roll-button ${key}" data-roll="${key}"><strong>${label} +${character.stats[key]}</strong><span>${help}</span></button>`).join("")}
+          ${stats.map(([key, label, help]) => `<button class="roll-button ${key}" data-roll="${key}" ${state.pendingRoll ? "disabled" : ""}><strong>${label} +${character.stats[key]}</strong><span>${help}</span></button>`).join("")}
         </div>
-        <button class="special-action" data-special-roll="${special.stat}" ${specialUsed ? "disabled" : ""}>
+        <button class="special-action" data-special-roll="${special.stat}" ${specialUsed || state.pendingRoll ? "disabled" : ""}>
           <strong>${specialUsed ? "Special used" : `Use ${escapeHtml(special.name)}`}</strong>
           <span>${specialUsed ? "Available next scene" : specialRollLabel(special.stat, specialStatValue)}</span>
         </button>
@@ -626,19 +627,28 @@ function wireCurrentTab(character, isGuide) {
 
   app.querySelectorAll("[data-roll]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (state.pendingRoll) return;
+      state.pendingRoll = true;
+      renderTable();
       try {
         const data = await api("/api/rooms", {
           method: "POST",
           body: JSON.stringify({ roomId: state.room.id, action: "roll", clientId: state.clientId, stat: button.dataset.roll })
         });
+        state.pendingRoll = false;
         setRoom(data.room);
       } catch (error) {
+        state.pendingRoll = false;
         setError(error);
       }
     });
   });
 
   app.querySelector("[data-special-roll]")?.addEventListener("click", async (event) => {
+    if (state.pendingRoll) return;
+    state.pendingRoll = true;
+    const stat = event.currentTarget.dataset.specialRoll;
+    renderTable();
     try {
       const data = await api("/api/rooms", {
         method: "POST",
@@ -646,12 +656,14 @@ function wireCurrentTab(character, isGuide) {
           roomId: state.room.id,
           action: "roll",
           clientId: state.clientId,
-          stat: event.currentTarget.dataset.specialRoll,
+          stat,
           useSpecial: true
         })
       });
+      state.pendingRoll = false;
       setRoom(data.room);
     } catch (error) {
+      state.pendingRoll = false;
       setError(error);
     }
   });
